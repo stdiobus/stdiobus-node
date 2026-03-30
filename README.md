@@ -16,7 +16,7 @@ Native Node.js binding for stdio_bus - the AI agent transport layer.
 ## Installation
 
 ```bash
-npm install @stdio-bus/node
+npm install @stdiobus/node
 ```
 
 Prebuilt binaries: macOS (x64, arm64), Linux (x64, arm64). Windows via Docker backend.
@@ -28,7 +28,7 @@ Prebuilt binaries: macOS (x64, arm64), Linux (x64, arm64). Windows via Docker ba
 Messages are sent/received directly via the JavaScript API:
 
 ```javascript
-const { StdioBus } = require('@stdio-bus/node');
+const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configPath: './config.json'
@@ -62,7 +62,7 @@ await bus.stop();
 Accept external client connections over TCP:
 
 ```javascript
-const { StdioBus } = require('@stdio-bus/node');
+const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configPath: './config.json',
@@ -89,18 +89,18 @@ setInterval(() => {
 Accept connections via Unix domain socket:
 
 ```javascript
-const { StdioBus } = require('@stdio-bus/node');
+const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configPath: './config.json',
   listenMode: 'unix',
-  unixPath: '/tmp/stdio-bus.sock'
+  unixPath: '/tmp/stdiobus.sock'
 });
 
 await bus.start();
-console.log('Listening on /tmp/stdio-bus.sock');
+console.log('Listening on /tmp/stdiobus.sock');
 
-// Clients can connect with: nc -U /tmp/stdio-bus.sock
+// Clients can connect with: nc -U /tmp/stdiobus.sock
 ```
 
 ## Configuration
@@ -245,7 +245,7 @@ Destroy the bus and release all resources.
 ### Constants
 
 ```javascript
-const { BusState, ListenMode } = require('@stdio-bus/node');
+const { BusState, ListenMode } = require('@stdiobus/node');
 
 // Bus states
 BusState.CREATED   // 0
@@ -265,7 +265,7 @@ ListenMode.UNIX    // 'unix'
 Run stdio_bus in a Docker container. Required on Windows, optional on macOS/Linux.
 
 ```javascript
-const { StdioBus } = require('@stdio-bus/node');
+const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configPath: './config.json',
@@ -292,7 +292,7 @@ await bus.stop();
 | `pullPolicy` | `if-missing` | `never`, `if-missing`, or `always` |
 | `enginePath` | `docker` | Path to docker CLI |
 | `startupTimeoutMs` | `15000` | Container startup timeout |
-| `containerNamePrefix` | `stdio-bus` | Container name prefix |
+| `containerNamePrefix` | `stdiobus` | Container name prefix |
 | `extraArgs` | `[]` | Extra `docker run` arguments |
 | `env` | `{}` | Environment variables |
 
@@ -303,7 +303,7 @@ await bus.stop();
 ### Echo Server (TCP)
 
 ```javascript
-const { StdioBus } = require('@stdio-bus/node');
+const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configPath: './echo-config.json',
@@ -325,7 +325,7 @@ process.on('SIGINT', async () => {
 ### MCP Proxy
 
 ```javascript
-const { StdioBus } = require('@stdio-bus/node');
+const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configPath: './mcp-config.json',
@@ -342,7 +342,7 @@ await bus.start();
 ```mermaid
 sequenceDiagram
     participant App as Node.js Application
-    participant JS as @stdio-bus/node
+    participant JS as @stdiobus/node
     participant NAPI as binding.c (N-API)
     participant Lib as libstdio_bus.a
     participant W as Worker Processes
