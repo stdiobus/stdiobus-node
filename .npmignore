@@ -1,0 +1,39 @@
+# Source files (not needed for npm package)
+src/
+binding.gyp
+scripts/
+
+# Build artifacts (except prebuilds)
+build/
+*.o
+*.a
+
+# Development files
+.gitignore
+.DS_Store
+*.log
+
+# Test files
+test/
+conformance/
+
+# Documentation source (README.md is included)
+docs/
+
+# CI/CD
+.github/
+.travis.yml
+.circleci/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Keep these (explicitly)
+!lib/
+!prebuilds/
+!README.md
+!LICENSE
+!package.json
