@@ -28,8 +28,8 @@ fs.writeFileSync(configPath, JSON.stringify(testConfig, null, 2));
 console.log('Testing @stdio-bus/node native addon (pure C)...\n');
 
 try {
-  // Load the native addon
-  const binding = require('../build/Release/stdio_bus_native.node');
+  // Load the native addon (platform-aware via load-native)
+  const binding = require('../lib/load-native');
   console.log('✓ Native addon loaded successfully');
   console.log('  Exports:', Object.keys(binding));
 

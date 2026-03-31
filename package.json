@@ -24,8 +24,6 @@
     "install": "node lib/load-native.js --check || node-gyp rebuild",
     "build": "node-gyp rebuild",
     "build:debug": "node-gyp rebuild --debug",
-    "prebuild": "./scripts/build-prebuilds.sh",
-    "prepublishOnly": "npm run prebuild",
     "test": "node test/basic.js",
     "test:docker": "node test/docker-backend.js",
     "test:conformance": "node test/conformance.js",
@@ -67,9 +65,7 @@
   ],
   "files": [
     "lib/",
-    "src/",
     "prebuilds/",
-    "binding.gyp",
     "LICENSE",
     "README.md"
   ],
