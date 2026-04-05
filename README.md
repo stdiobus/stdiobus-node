@@ -2,7 +2,7 @@
 
 Native Node.js binding for stdio_bus - the AI agent transport layer.
 
-[![npm](https://img.shields.io/npm/v/@stdiobus/node)](https://www.npmjs.com/package/@stdiobus/node)
+[![npm version](https://img.shields.io/npm/v/@stdiobus/node.svg?style=for-the-badge)](https://www.npmjs.com/package/@stdiobus/node)
 
 ## Features
 
