@@ -3,6 +3,7 @@
 Native Node.js binding for stdio_bus - the AI agent transport layer.
 
 [![npm version](https://img.shields.io/npm/v/@stdiobus/node.svg?style=for-the-badge)](https://www.npmjs.com/package/@stdiobus/node)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=apache)](LICENSE)
 
 ## Features
 
@@ -31,28 +32,78 @@ Messages are sent/received directly via the JavaScript API:
 const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
-  configPath: './config.json'
-});
-
-// Handle responses from workers
-bus.onMessage((msg) => {
-  const response = JSON.parse(msg);
-  console.log('Response:', response);
+  configJson: {
+    pools: [{ id: 'echo', command: 'node', args: ['./echo-worker.js'], instances: 1 }]
+  }
 });
 
 await bus.start();
 
-// Send a request
 bus.send(JSON.stringify({
   jsonrpc: '2.0',
   id: '1',
-  method: 'tools/list',
-  params: {}
+  method: 'echo',
+  params: { message: 'hello' }
 }));
 
-// Or use the request() helper with automatic correlation
-const result = await bus.request('tools/list', {});
-console.log('Tools:', result);
+// poll() returns messages from workers
+const messages = bus.poll(500);
+console.log('Response:', JSON.parse(messages[0]));
+
+await bus.stop();
+```
+
+<details>
+<summary>Verified output (from <code>node test/readme_examples.js</code>)</summary>
+
+```
+[stdio_bus] INFO: stdio_bus instance created
+[stdio_bus] INFO: stdio_bus started with 1 workers (mode: embedded)
+[echo-worker] Started, waiting for NDJSON messages on stdin...
+Response: {"jsonrpc":"2.0","id":"1","result":{"echo":{"message":"hello"},"method":"echo","timestamp":"..."}}
+[stdio_bus] INFO: Initiating graceful shutdown
+[stdio_bus] INFO: All workers stopped
+```
+
+</details>
+
+### Real-World Usage (ACP Agent)
+
+Full ACP protocol flow: initialize agent, create session, send prompt.
+Requires an ACP-compatible worker and appropriate credentials.
+
+```javascript
+const { StdioBus } = require('@stdiobus/node');
+
+const bus = new StdioBus({
+  configJson: {
+    pools: [{ id: 'acp-worker', command: 'node', args: ['./acp-worker.js'], instances: 1 }]
+  }
+});
+
+await bus.start();
+
+// 1. Initialize agent
+const init = await bus.request('initialize', {
+  protocolVersion: 1,
+  clientInfo: { name: 'my-app', version: '1.0.0' },
+  clientCapabilities: {}
+}, { agentId: 'my-agent', timeout: 60000 });
+console.log('Agent:', init.agentInfo);
+
+// 2. Create session
+const session = await bus.request('session/new', {
+  cwd: process.cwd(),
+  mcpServers: []
+}, { agentId: 'my-agent' });
+const sessionId = session.sessionId;
+
+// 3. Send prompt
+const result = await bus.request('session/prompt', {
+  sessionId,
+  prompt: [{ type: 'text', text: 'What is 2+2?' }]
+}, { agentId: 'my-agent' });
+console.log('Response:', result.text);
 
 await bus.stop();
 ```
@@ -65,7 +116,9 @@ Accept external client connections over TCP:
 const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
-  configPath: './config.json',
+  configJson: {
+    pools: [{ id: 'worker', command: 'node', args: ['./worker.js'], instances: 4 }]
+  },
   listenMode: 'tcp',
   tcpHost: '0.0.0.0',
   tcpPort: 8080
@@ -92,7 +145,9 @@ Accept connections via Unix domain socket:
 const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
-  configPath: './config.json',
+  configJson: {
+    pools: [{ id: 'worker', command: 'node', args: ['./worker.js'], instances: 2 }]
+  },
   listenMode: 'unix',
   unixPath: '/tmp/stdiobus.sock'
 });
@@ -105,26 +160,38 @@ console.log('Listening on /tmp/stdiobus.sock');
 
 ## Configuration
 
-Create a `config.json` file:
+Configuration is passed programmatically via `configJson`:
 
-```json
-{
-  "pools": [
-    {
-      "id": "mcp-worker",
-      "command": "node",
-      "args": ["./worker.js"],
-      "instances": 4
+```javascript
+const { StdioBus } = require('@stdiobus/node');
+
+const bus = new StdioBus({
+  configJson: {
+    pools: [
+      {
+        id: 'mcp-worker',
+        command: 'node',
+        args: ['./worker.js'],
+        instances: 4
+      }
+    ],
+    limits: {
+      max_input_buffer: 1048576,
+      max_output_queue: 4194304,
+      max_restarts: 5,
+      restart_window_sec: 60
     }
-  ],
-  "limits": {
-    "max_input_buffer": 1048576,
-    "max_output_queue": 4194304,
-    "max_restarts": 5,
-    "restart_window_sec": 60
   }
-}
+});
 ```
+
+File-based config is also supported for backward compatibility:
+
+```javascript
+const bus = new StdioBus({ configPath: './config.json' });
+```
+
+`configJson` and `configPath` are mutually exclusive.
 
 ## API Reference
 
@@ -138,15 +205,13 @@ new StdioBus(options)
 
 | Option | Type | Required | Default | Description |
 |--------|------|----------|---------|-------------|
-| `configPath` | string | Yes | - | Path to JSON configuration file |
-| `backend` | string | No | `'auto'` | Backend: `'auto'`, `'native'`, or `'docker'` |
+| `configJson` | object | * | - | Programmatic config (mutually exclusive with configPath) |
+| `configPath` | string | * | - | Path to JSON config file (mutually exclusive with configJson) |
 | `listenMode` | string | No | `'none'` | Transport mode: `'none'`, `'tcp'`, or `'unix'` (native only) |
 | `tcpHost` | string | No | `'127.0.0.1'` | TCP bind address (native tcp mode) |
 | `tcpPort` | number | Yes* | - | TCP port (*required for native tcp mode) |
 | `unixPath` | string | Yes* | - | Unix socket path (*required for native unix mode) |
-| `pollIntervalMs` | number | No | `10` | Polling interval (native only) |
 | `logLevel` | number | No | `1` | Log level: 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR (native only) |
-| `docker` | object | No | - | Docker backend options (see Docker Mode section) |
 
 **Backend selection (`backend` option):**
 - `'auto'` (default): Uses native on macOS/Linux, docker on Windows

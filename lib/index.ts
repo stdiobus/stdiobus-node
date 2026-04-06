@@ -1,15 +1,17 @@
 /**
- * @stdio-bus/node - Native Node.js binding for stdio_bus
+ * @stdiobus/node - Native Node.js binding for stdio_bus
  *
  * This module provides a native integration with stdio_bus,
  * the AI agent transport layer. No external binary required.
  *
  * @example
  * ```typescript
- * import { StdioBus } from '@stdio-bus/node';
+ * import { StdioBus } from '@stdiobus/node';
  *
  * const bus = new StdioBus({
- *   configPath: './config.json',
+ *   configJson: {
+ *     pools: [{ id: 'worker', command: 'node', args: ['./worker.js'], instances: 2 }]
+ *   },
  *   onMessage: (msg) => console.log('Received:', msg),
  *   onError: (code, message) => console.error('Error:', code, message)
  * });
@@ -49,8 +51,11 @@ export type BusStateType = typeof BusState[keyof typeof BusState];
  * Options for creating a StdioBus instance
  */
 export interface StdioBusOptions {
-  /** Path to JSON configuration file */
-  configPath: string;
+  /** Path to JSON configuration file (mutually exclusive with configJson) */
+  configPath?: string;
+
+  /** Programmatic config (mutually exclusive with configPath) */
+  configJson?: StdioBusConfig;
 
   /** Callback when a message is received from workers */
   onMessage?: (message: string) => void;
@@ -66,6 +71,48 @@ export interface StdioBusOptions {
 
   /** Log level: 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR (default: 1) */
   logLevel?: number;
+}
+
+/**
+ * Worker pool configuration
+ */
+export interface StdioBusPoolConfig {
+  /** Unique pool identifier */
+  id: string;
+  /** Executable path */
+  command: string;
+  /** Command-line arguments */
+  args?: string[];
+  /** Number of worker instances (≥1) */
+  instances: number;
+}
+
+/**
+ * Operational limits
+ */
+export interface StdioBusLimitsConfig {
+  /** Per-connection input buffer limit in bytes */
+  max_input_buffer?: number;
+  /** Per-connection output queue limit in bytes */
+  max_output_queue?: number;
+  /** Max restarts within time window */
+  max_restarts?: number;
+  /** Restart counting window in seconds */
+  restart_window_sec?: number;
+  /** Graceful shutdown timeout in seconds */
+  drain_timeout_sec?: number;
+  /** Backpressure timeout in seconds */
+  backpressure_timeout_sec?: number;
+}
+
+/**
+ * stdio_bus JSON configuration
+ */
+export interface StdioBusConfig {
+  /** Worker pool definitions (at least one required) */
+  pools: StdioBusPoolConfig[];
+  /** Operational limits (all optional, defaults applied by C bus) */
+  limits?: StdioBusLimitsConfig;
 }
 
 /**
@@ -97,11 +144,24 @@ export class StdioBus {
   private started = false;
 
   constructor(options: StdioBusOptions) {
-    if (!options.configPath) {
-      throw new Error('configPath is required');
+    const hasPath = !!options.configPath;
+    const hasJson = !!options.configJson;
+
+    if (hasPath && hasJson) {
+      throw new Error('configPath and configJson are mutually exclusive');
+    }
+    if (!hasPath && !hasJson) {
+      throw new Error('configPath or configJson is required');
     }
 
-    this.native = new binding.StdioBus(options);
+    // For configJson, serialize to string for the native binding
+    const nativeOpts: any = { ...options };
+    if (hasJson) {
+      nativeOpts.configJson = JSON.stringify(options.configJson);
+      delete nativeOpts.configPath;
+    }
+
+    this.native = new binding.StdioBus(nativeOpts);
   }
 
   /**

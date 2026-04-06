@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Conformance tests for @stdio-bus/node native addon
+ * Conformance tests for @stdiobus/node native addon
  *
  * Tests that the addon correctly implements stdio_bus protocol.
  * Uses the same test vectors as the main conformance harness.
@@ -258,7 +258,7 @@ async function testStateTransitions() {
  * Run all tests
  */
 async function main() {
-  console.log(`${colors.cyan}@stdio-bus/node Conformance Tests${colors.reset}\n`);
+  console.log(`${colors.cyan}@stdiobus/node Conformance Tests${colors.reset}\n`);
 
   const results = {
     total: 0,

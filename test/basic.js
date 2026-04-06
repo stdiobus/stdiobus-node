@@ -1,5 +1,5 @@
 /**
- * Basic test for @stdio-bus/node native addon (pure C)
+ * Basic test for @stdiobus/node native addon (pure C)
  */
 
 const path = require('path');

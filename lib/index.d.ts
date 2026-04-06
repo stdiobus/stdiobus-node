@@ -1,5 +1,5 @@
 /**
- * @stdio-bus/node - Native Node.js binding for stdio_bus
+ * @stdiobus/node - Native Node.js binding for stdio_bus
  */
 
 export interface BusState {
@@ -35,7 +35,7 @@ export interface DockerOptions {
   enginePath?: string;
   /** Container startup timeout in ms (default: 15000) */
   startupTimeoutMs?: number;
-  /** Container name prefix (default: 'stdio-bus') */
+  /** Container name prefix (default: 'stdiobus') */
   containerNamePrefix?: string;
   /** Extra docker run arguments */
   extraArgs?: string[];
@@ -87,11 +87,11 @@ export type MessageHandler = (message: string) => void;
 export class StdioBus {
   /**
    * Create a new StdioBus instance
-   * 
+   *
    * @example
    * // Native backend (default on macOS/Linux)
    * const bus = new StdioBus({ configPath: './config.json' });
-   * 
+   *
    * @example
    * // Docker backend (required on Windows, optional elsewhere)
    * const bus = new StdioBus({
