@@ -149,11 +149,14 @@ function testFdRegistration() {
     const unregResult2 = binding.unregisterEmbeddedWorker(workerId);
     assert(unregResult2 === true, 'unregisterEmbeddedWorker is idempotent');
 
-    // Let the kernel process the unregister before teardown
-    binding.poll(0);
-
-    // Clean up JS-side fd
+    // Close JS-side fd BEFORE teardown so the kernel sees EOF and processes
+    // the "Worker N connection closed" event while the router is still alive.
+    // On Linux, if this close happens after stop()/close(), the kernel
+    // fires the close callback into a destroyed router → segfault.
     binding.closeFd(pair.jsFd);
+
+    // Let the kernel fully process the fd close + unregister events
+    for (let i = 0; i < 20; i++) binding.poll(50);
   } finally {
     teardownBus();
   }
@@ -311,11 +314,13 @@ function testMultipleEmbeddedWorkers() {
     binding.unregisterEmbeddedWorker(workerId1);
     binding.unregisterEmbeddedWorker(workerId2);
 
-    // Let the kernel process unregistrations before teardown
-    binding.poll(0);
-
+    // Close JS-side fds BEFORE teardown — kernel must see EOF and process
+    // close events while the router is still alive (prevents segfault on Linux)
     binding.closeFd(pair1.jsFd);
     binding.closeFd(pair2.jsFd);
+
+    // Let the kernel fully process close events
+    for (let i = 0; i < 20; i++) binding.poll(50);
   } finally {
     teardownBus();
   }
