@@ -74,7 +74,7 @@ const configPath = path.join(os.tmpdir(), `stdio-bus-test-${process.pid}.json`);
 
 function setupBus() {
   fs.writeFileSync(configPath, JSON.stringify(testConfig, null, 2));
-  binding.create({ config: JSON.stringify(testConfig) });
+  binding.create({ configJson: JSON.stringify(testConfig) });
   binding.start();
 }
 
