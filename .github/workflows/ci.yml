@@ -1,0 +1,250 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Typecheck ────────────────────────────────────────────────
+  typecheck:
+    name: Typecheck (strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  # ─── Build ────────────────────────────────────────────────────
+  build:
+    name: Build (esbuild + tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Verify output exists
+        run: |
+          test -f out/dist/index.js
+          test -f out/tsc/index.d.ts
+          test -f out/tsc/types.d.ts
+          test -f out/tsc/load-native.d.ts
+          test -f out/tsc/docker-backend.d.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: out/
+          retention-days: 1
+
+  # ─── Native tests — Linux x64 ────────────────────────────────
+  test-native-linux:
+    name: Native tests (Linux x64, Node ${{ matrix.node }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: out/
+      - name: Basic native addon test
+        run: node test/basic.js
+      - name: Config JSON (high-level StdioBus)
+        run: node test/config-json-highlevel.js
+      - name: Conformance
+        run: node test/conformance.js
+      - name: Embedded bridge
+        run: node test/embedded-bridge.js
+
+  # ─── Native tests — macOS ────────────────────────────────────
+  test-native-macos:
+    name: Native tests (macOS ${{ matrix.arch }}, Node ${{ matrix.node }})
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-13
+            arch: x64
+            node: 20
+          - runner: macos-14
+            arch: arm64
+            node: 20
+          - runner: macos-14
+            arch: arm64
+            node: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: out/
+      - name: Basic native addon test
+        run: node test/basic.js
+      - name: Config JSON (high-level StdioBus)
+        run: node test/config-json-highlevel.js
+      - name: Conformance
+        run: node test/conformance.js
+      - name: Embedded bridge
+        run: node test/embedded-bridge.js
+
+  # ─── README verbatim verification ─────────────────────────────
+  test-readme:
+    name: README examples verification
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: out/
+      - run: npx tsx test/readme/verbatim.test.ts
+
+  # ─── E2E: npm pack → install → verify (native) ───────────────
+  test-e2e-native:
+    name: E2E native (${{ matrix.os }})
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            os: linux-x64
+          - runner: macos-14
+            os: macos-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: out/
+      - name: E2E pack and test (native only)
+        run: ./test/e2e/pack-and-test.sh --skip-docker
+
+  # ─── E2E: Docker backend ──────────────────────────────────────
+  test-e2e-docker:
+    name: E2E Docker (Linux x64)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: out/
+      - name: E2E pack and test (Docker)
+        run: ./test/e2e/pack-and-test.sh --skip-native --skip-arm64
+
+  # ─── Docker backend unit tests ────────────────────────────────
+  test-docker-backend:
+    name: Docker backend tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: out/
+      - name: Docker backend test
+        run: node test/docker-backend.js
+
+  # ─── Package hygiene ──────────────────────────────────────────
+  package-audit:
+    name: Package hygiene
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: out/
+      - name: npm pack dry-run — verify contents
+        run: |
+          npm pack --dry-run 2>&1 | tee pack-contents.txt
+          # Must include prebuilds
+          grep -q 'prebuilds/linux-x64/stdio_bus_native.node' pack-contents.txt
+          grep -q 'prebuilds/linux-arm64/stdio_bus_native.node' pack-contents.txt
+          grep -q 'prebuilds/darwin-arm64/stdio_bus_native.node' pack-contents.txt
+          # Must include built output
+          grep -q 'out/dist/index.js' pack-contents.txt
+          grep -q 'out/tsc/index.d.ts' pack-contents.txt
+          # Must NOT include source or tests
+          ! grep -q 'src/' pack-contents.txt
+          ! grep -q 'test/' pack-contents.txt
+          ! grep -q 'binding.gyp' pack-contents.txt
+          echo "✓ Package contents verified"
+      - name: Check no devDependencies leak into bundle
+        run: |
+          # Verify the CJS bundle doesn't require dev-only packages
+          node -e "
+            const fs = require('fs');
+            const bundle = fs.readFileSync('out/dist/index.js', 'utf8');
+            const devDeps = ['esbuild', 'tsx', 'typescript'];
+            for (const dep of devDeps) {
+              if (bundle.includes('require(\"' + dep + '\")') || bundle.includes(\"require('\" + dep + \"')\")) {
+                console.error('ERROR: bundle references devDependency:', dep);
+                process.exit(1);
+              }
+            }
+            console.log('✓ No devDependency leaks in bundle');
+          "
