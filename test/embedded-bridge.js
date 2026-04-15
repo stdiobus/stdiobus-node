@@ -77,6 +77,14 @@ function setupBus() {
 
 function teardownBus() {
   try { binding.stop(1); } catch (e) { /* ignore */ }
+  // Drain the poll loop so the C kernel finishes shutdown before close().
+  // Without this, close() can hit a use-after-free on Linux (segfault).
+  try {
+    for (let i = 0; i < 50; i++) {
+      binding.poll(100);
+      if (binding.getState() === binding.STATE_STOPPED) break;
+    }
+  } catch (e) { /* ignore */ }
   try { binding.close(); } catch (e) { /* ignore */ }
   try { fs.unlinkSync(configPath); } catch (e) { /* ignore */ }
 }
@@ -140,6 +148,9 @@ function testFdRegistration() {
     // Unregister again (idempotent)
     const unregResult2 = binding.unregisterEmbeddedWorker(workerId);
     assert(unregResult2 === true, 'unregisterEmbeddedWorker is idempotent');
+
+    // Let the kernel process the unregister before teardown
+    binding.poll(0);
 
     // Clean up JS-side fd
     binding.closeFd(pair.jsFd);
@@ -299,6 +310,9 @@ function testMultipleEmbeddedWorkers() {
     // Unregister both
     binding.unregisterEmbeddedWorker(workerId1);
     binding.unregisterEmbeddedWorker(workerId2);
+
+    // Let the kernel process unregistrations before teardown
+    binding.poll(0);
 
     binding.closeFd(pair1.jsFd);
     binding.closeFd(pair2.jsFd);
