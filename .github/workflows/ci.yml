@@ -90,9 +90,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-13
-            arch: x64
-            node: 20
           - runner: macos-14
             arch: arm64
             node: 20
