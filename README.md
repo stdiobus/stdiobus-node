@@ -326,7 +326,7 @@ out/
 
 ## Security
 
-To report a security vulnerability, email [security@stdiobus.dev](mailto:security@stdiobus.dev). Do not open a public issue.
+To report a security vulnerability, email [raman@stdiobus.com](mailto:raman@stdiobus.com). Do not open a public issue.
 
 ## License
 
