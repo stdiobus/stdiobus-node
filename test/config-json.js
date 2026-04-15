@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * E2E test: programmatic config via configJson (no config.json file)
  *
  * This is the "user-visible SDK" test. The user writes:
- *   new StdioBus({ configJson: { pools: [...] } })
+ *   new StdioBus({ config: { pools: [...] } })
  * No binary path. No config file. Everything under the hood.
  */
 
@@ -42,7 +45,7 @@ const configJson = JSON.stringify({
 });
 
 try {
-  const created = binding.create({ configJson: configJson, logLevel: 1 });
+  const created = binding.create({ config: configJson, logLevel: 1 });
   console.log('  ✓ Bus created with configJson (no file)');
 
   const started = binding.start();

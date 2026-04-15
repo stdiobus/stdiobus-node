@@ -31,7 +31,7 @@ Prebuilt native binaries are included. No C compiler or build tools required.
 const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
-  configJson: {
+  config: {
     pools: [{
       id: 'echo',
       command: 'node',
@@ -59,7 +59,7 @@ import { StdioBus, BusState } from '@stdiobus/node';
 import type { StdioBusOptions, BusStats } from '@stdiobus/node';
 
 const options: StdioBusOptions = {
-  configJson: {
+  config: {
     pools: [{
       id: 'worker',
       command: 'node',
@@ -102,7 +102,7 @@ try {
 const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
-  configJson: {
+  config: {
     pools: [{
       id: 'acp-worker',
       command: 'node',
@@ -139,7 +139,7 @@ bus.destroy();
 
 ```javascript
 const bus = new StdioBus({
-  configJson: {
+  config: {
     pools: [{
       id: 'mcp-tools',
       command: 'node',
@@ -172,7 +172,7 @@ Accept external client connections over TCP:
 const port = Number(process.env.PORT) || 8080;
 
 const bus = new StdioBus({
-  configJson: {
+  config: {
     pools: [{
       id: 'worker',
       command: 'node',

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * Unit tests for N-API Bridge — Socketpair and fd Registration (Task 3.6)
  *
@@ -71,7 +74,7 @@ const configPath = path.join(os.tmpdir(), `stdio-bus-test-${process.pid}.json`);
 
 function setupBus() {
   fs.writeFileSync(configPath, JSON.stringify(testConfig, null, 2));
-  binding.create({ configJson: JSON.stringify(testConfig) });
+  binding.create({ config: JSON.stringify(testConfig) });
   binding.start();
 }
 

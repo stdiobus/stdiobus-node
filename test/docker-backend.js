@@ -1,11 +1,15 @@
 #!/usr/bin/env node
+
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * Test Docker backend for stdio_bus
- * 
+ *
  * Prerequisites:
  * - Docker installed and running
  * - Image stdiobus/stdiobus:node20 available (will be pulled if missing)
- * 
+ *
  * Run: node test/docker-backend.js
  */
 
