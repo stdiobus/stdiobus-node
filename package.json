@@ -1,34 +1,31 @@
 {
   "name": "@stdiobus/node",
   "version": "1.1.0",
-  "description": "Native Node.js binding for stdio_bus - AI agent transport layer. No external binary required.",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "description": "Native Node.js binding for stdio_bus — AI agent transport layer. Prebuild binaries, Docker fallback.",
+  "main": "out/dist/index.js",
+  "types": "out/tsc/index.d.ts",
   "exports": {
     ".": {
-      "types": "./lib/index.d.ts",
-      "require": "./lib/index.js",
-      "import": "./lib/index.js",
-      "default": "./lib/index.js"
-    },
-    "./docker": {
-      "require": "./lib/docker-backend.js",
-      "import": "./lib/docker-backend.js"
+      "types": "./out/tsc/index.d.ts",
+      "require": "./out/dist/index.js",
+      "default": "./out/dist/index.js"
     }
   },
-  "homepage": "https://github.com/stdiobus/stdiobus-node",
-  "bugs": {
-    "url": "https://github.com/stdiobus/stdiobus-node/issues"
-  },
   "scripts": {
-    "install": "node lib/load-native.js --check || node-gyp rebuild",
-    "build": "node-gyp rebuild",
-    "build:debug": "node-gyp rebuild --debug",
+    "build:js": "node scripts/esbuild.config.mjs",
+    "build:types": "tsc -p tsconfig.types.json",
+    "build": "npm run clean && npm run build:js && npm run build:types",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf out",
     "test": "node test/basic.js",
     "test:docker": "node test/docker-backend.js",
     "test:conformance": "node test/conformance.js",
-    "test:all": "npm test && npm run test:conformance",
-    "clean": "node-gyp clean"
+    "test:e2e": "./test/e2e/pack-and-test.sh",
+    "test:e2e:native": "./test/e2e/pack-and-test.sh --skip-docker",
+    "test:e2e:docker": "./test/e2e/pack-and-test.sh --skip-native",
+    "test:readme": "npx tsx test/readme/verbatim.test.ts",
+    "test:all": "npm test && npm run test:conformance && npm run test:readme",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "stdio-bus",
@@ -51,23 +48,32 @@
     "type": "git",
     "url": "git+https://github.com/stdiobus/stdiobus-node.git"
   },
+  "homepage": "https://github.com/stdiobus/stdiobus-node",
+  "bugs": {
+    "url": "https://github.com/stdiobus/stdiobus-node/issues"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
-  "os": [
-    "darwin",
-    "linux",
-    "win32"
-  ],
   "cpu": [
     "x64",
     "arm64"
   ],
   "files": [
-    "lib/",
+    "out/dist/**/*.js",
+    "out/tsc/**/*.d.ts",
     "prebuilds/",
-    "LICENSE",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
-  "gypfile": true
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  }
 }

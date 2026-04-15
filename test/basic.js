@@ -25,11 +25,16 @@ const testConfig = {
 const configPath = path.join(__dirname, 'test-config.json');
 fs.writeFileSync(configPath, JSON.stringify(testConfig, null, 2));
 
-console.log('Testing @stdio-bus/node native addon (pure C)...\n');
+console.log('Testing @stdiobus/node native addon (pure C)...\n');
 
 try {
-  // Load the native addon (platform-aware via load-native)
-  const binding = require('../lib/load-native');
+  // Load the native addon (prebuild first, then build/Release for dev)
+  const os = require('os');
+  const addonName = 'stdio_bus_native.node';
+  const prebuildPath = path.join(__dirname, '..', 'prebuilds', `${os.platform()}-${os.arch()}`, addonName);
+  const buildPath = path.join(__dirname, '..', 'build', 'Release', addonName);
+  const addonPath = fs.existsSync(prebuildPath) ? prebuildPath : buildPath;
+  const binding = require(addonPath);
   console.log('✓ Native addon loaded successfully');
   console.log('  Exports:', Object.keys(binding));
 

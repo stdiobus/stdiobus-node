@@ -75,7 +75,7 @@ async function runTests() {
     process.exit(0);
   }
 
-  const { StdioBus } = require('../lib/index.js');
+  const { StdioBus } = require('../out/dist/index.js');
 
   let bus;
   try {

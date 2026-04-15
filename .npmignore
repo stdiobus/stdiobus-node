@@ -1,39 +1,31 @@
-# Source files (not needed for npm package)
-src/
-binding.gyp
+# Monorepo-only (C binding, build scripts)
+native/
 scripts/
+src/
 
-# Build artifacts (except prebuilds)
+# Build artifacts
 build/
 *.o
 *.a
+*.tgz
 
-# Development files
+# Dev files
 .gitignore
 .DS_Store
 *.log
+tsconfig.json
+tsconfig.types.json
 
-# Test files
+# Tests
 test/
-conformance/
-
-# Documentation source (README.md is included)
-docs/
 
 # CI/CD
 .github/
 .travis.yml
 .circleci/
 
-# Editor files
+# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Keep these (explicitly)
-!lib/
-!prebuilds/
-!README.md
-!LICENSE
-!package.json

@@ -1,6 +1,7 @@
-node_modules
-dist
-.idea
-build
-
+node_modules/
+out/
+*.tgz
+.DS_Store
 sandbox
+.vscode
+.idea
