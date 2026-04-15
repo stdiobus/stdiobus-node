@@ -8,7 +8,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { StdioBus, BusState } = require('../lib');
+const { StdioBus, BusState } = require('../out/dist/index.js');
 
 // ANSI colors
 const colors = {

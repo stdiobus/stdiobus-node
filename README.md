@@ -1,18 +1,15 @@
 # @stdiobus/node
 
-Native Node.js binding for stdio_bus - the AI agent transport layer.
+[![npm](https://img.shields.io/npm/v/@stdiobus/node?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/@stdiobus/node)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
+[![Native](https://img.shields.io/badge/native-macOS%20%7C%20Linux-lightgrey?style=for-the-badge&logo=linux)](https://github.com/stdiobus/stdiobus)
+[![Docker](https://img.shields.io/badge/docker-Windows%20fallback-blue?style=for-the-badge&logo=docker)](https://hub.docker.com/r/stdiobus/stdiobus)
+[![Build](https://img.shields.io/badge/build-esbuild-yellow?style=for-the-badge&logo=esbuild)](https://esbuild.github.io)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=opensourceinitiative)](https://github.com/stdiobus/stdiobus/blob/main/sdk/node-native/LICENSE)
+[![TypeScript](https://img.shields.io/badge/typescript-strict-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
+[![Stable](https://img.shields.io/badge/status-stable-brightgreen?style=for-the-badge)](https://github.com/stdiobus/stdiobus)
 
-[![npm version](https://img.shields.io/npm/v/@stdiobus/node.svg?style=for-the-badge)](https://www.npmjs.com/package/@stdiobus/node)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=apache)](LICENSE)
-
-## Features
-
-- **No external binary required** - Native addon includes libstdio_bus
-- **High performance** - Direct C integration, no process spawning
-- **Cross-platform** - Native on macOS/Linux, Docker on Windows
-- **Multiple transport modes** - Embedded, TCP, or Unix socket
-- **Session-based routing** - Automatic message routing to workers
-- **Worker lifecycle management** - Automatic restart with backoff
+Native Node.js SDK for the [stdio Bus kernel](https://github.com/stdiobus/stdiobus) — a deterministic C runtime that routes NDJSON-framed JSON-RPC messages between your application and worker processes. Session-aware routing, automatic worker lifecycle management, and prebuilt native binaries for macOS and Linux. Docker fallback for Windows and unsupported platforms.
 
 ## Installation
 
@@ -20,429 +17,317 @@ Native Node.js binding for stdio_bus - the AI agent transport layer.
 npm install @stdiobus/node
 ```
 
-Prebuilt binaries: macOS (x64, arm64), Linux (x64, arm64). Windows via Docker backend.
+Prebuilt native binaries are included. No C compiler or build tools required.
+
+**Requirements:**
+
+- Node.js >= 18.0.0
+- macOS (x64, arm64) or Linux (x64, arm64) for native backend
+- Docker (optional) — required only on Windows or unsupported platforms
 
 ## Quick Start
 
-### Embedded Mode (Default)
-
-Messages are sent/received directly via the JavaScript API:
-
 ```javascript
 const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configJson: {
-    pools: [{ id: 'echo', command: 'node', args: ['./echo-worker.js'], instances: 1 }]
-  }
+    pools: [{
+      id: 'echo',
+      command: 'node',
+      args: ['./workers/echo-worker.js'],
+      instances: 1,
+    }],
+  },
 });
 
 await bus.start();
 
-bus.send(JSON.stringify({
-  jsonrpc: '2.0',
-  id: '1',
-  method: 'echo',
-  params: { message: 'hello' }
-}));
-
-// poll() returns messages from workers
-const messages = bus.poll(500);
-console.log('Response:', JSON.parse(messages[0]));
+const result = await bus.request('echo', { message: 'hello' });
+console.log(result);
 
 await bus.stop();
+bus.destroy();
 ```
 
-<details>
-<summary>Verified output (from <code>node test/readme_examples.js</code>)</summary>
+## TypeScript
 
+The package ships with full type declarations.
+
+```typescript
+import { StdioBus, BusState } from '@stdiobus/node';
+import type { StdioBusOptions, BusStats } from '@stdiobus/node';
+
+const options: StdioBusOptions = {
+  configJson: {
+    pools: [{
+      id: 'worker',
+      command: 'node',
+      args: ['./worker.js'],
+      instances: 2,
+    }],
+    limits: {
+      max_input_buffer: 1_048_576,
+      max_output_queue: 4_194_304,
+      max_restarts: 5,
+      restart_window_sec: 60,
+    },
+  },
+};
+
+const bus = new StdioBus(options);
+
+try {
+  await bus.start();
+
+  bus.onMessage((msg: string) => {
+    console.log('Received:', msg);
+  });
+
+  const result = await bus.request('tools/list', {}, { timeout: 10_000 });
+  console.log('Tools:', result);
+} finally {
+  await bus.stop();
+  bus.destroy();
+}
 ```
-[stdio_bus] INFO: stdio_bus instance created
-[stdio_bus] INFO: stdio_bus started with 1 workers (mode: embedded)
-[echo-worker] Started, waiting for NDJSON messages on stdin...
-Response: {"jsonrpc":"2.0","id":"1","result":{"echo":{"message":"hello"},"method":"echo","timestamp":"..."}}
-[stdio_bus] INFO: Initiating graceful shutdown
-[stdio_bus] INFO: All workers stopped
-```
 
-</details>
+## Use Cases
 
-### Real-World Usage (ACP Agent)
+### ACP Agent
 
-Full ACP protocol flow: initialize agent, create session, send prompt.
-Requires an ACP-compatible worker and appropriate credentials.
+> For typed streaming events, use [`@stdiobus/agentic`](https://www.npmjs.com/package/@stdiobus/agentic) with `promptStream()` or `prompt()`. The example below shows the low-level transport approach.
 
 ```javascript
 const { StdioBus } = require('@stdiobus/node');
 
 const bus = new StdioBus({
   configJson: {
-    pools: [{ id: 'acp-worker', command: 'node', args: ['./acp-worker.js'], instances: 1 }]
-  }
+    pools: [{
+      id: 'acp-worker',
+      command: 'node',
+      args: ['./workers/acp-worker.js'],
+      instances: 1,
+    }],
+  },
 });
 
 await bus.start();
 
-// 1. Initialize agent
 const init = await bus.request('initialize', {
   protocolVersion: 1,
   clientInfo: { name: 'my-app', version: '1.0.0' },
-  clientCapabilities: {}
-}, { agentId: 'my-agent', timeout: 60000 });
-console.log('Agent:', init.agentInfo);
+  clientCapabilities: {},
+}, { timeout: 60_000 });
 
-// 2. Create session
 const session = await bus.request('session/new', {
   cwd: process.cwd(),
-  mcpServers: []
-}, { agentId: 'my-agent' });
-const sessionId = session.sessionId;
+  mcpServers: [],
+});
 
-// 3. Send prompt
 const result = await bus.request('session/prompt', {
-  sessionId,
-  prompt: [{ type: 'text', text: 'What is 2+2?' }]
-}, { agentId: 'my-agent' });
-console.log('Response:', result.text);
+  sessionId: session.sessionId,
+  prompt: [{ type: 'text', text: 'What is 2+2?' }],
+});
 
+console.log('Response:', result);
 await bus.stop();
+bus.destroy();
 ```
 
-### TCP Mode
+### MCP Tools
+
+```javascript
+const bus = new StdioBus({
+  configJson: {
+    pools: [{
+      id: 'mcp-tools',
+      command: 'node',
+      args: ['./workers/mcp-tools-worker.js'],
+      instances: 2,
+    }],
+  },
+});
+
+await bus.start();
+
+const tools = await bus.request('tools/list');
+const output = await bus.request('tools/call', {
+  name: 'search_docs',
+  arguments: { query: 'retry policy' },
+});
+
+console.log('Tools:', tools);
+console.log('Output:', output);
+
+await bus.stop();
+bus.destroy();
+```
+
+### TCP Server
 
 Accept external client connections over TCP:
 
 ```javascript
-const { StdioBus } = require('@stdiobus/node');
+const port = Number(process.env.PORT) || 8080;
 
 const bus = new StdioBus({
   configJson: {
-    pools: [{ id: 'worker', command: 'node', args: ['./worker.js'], instances: 4 }]
+    pools: [{
+      id: 'worker',
+      command: 'node',
+      args: ['./worker.js'],
+      instances: 4,
+    }],
   },
   listenMode: 'tcp',
   tcpHost: '0.0.0.0',
-  tcpPort: 8080
+  tcpPort: port,
 });
 
 await bus.start();
-console.log('Listening on TCP port 8080');
-console.log('Workers:', bus.getWorkerCount());
-
-// Monitor connections
-setInterval(() => {
-  console.log('Connected clients:', bus.getClientCount());
-}, 5000);
-
-// Clients can connect with: nc localhost 8080
-// And send NDJSON messages
+console.log(`Listening on TCP port ${port}`);
+// Clients connect and send NDJSON: nc localhost 8080
 ```
 
-### Unix Socket Mode
+## Docker Backend
 
-Accept connections via Unix domain socket:
+On Windows or when native binaries are unavailable, the SDK runs stdio Bus inside a Docker container and communicates over TCP:
 
 ```javascript
-const { StdioBus } = require('@stdiobus/node');
-
 const bus = new StdioBus({
-  configJson: {
-    pools: [{ id: 'worker', command: 'node', args: ['./worker.js'], instances: 2 }]
+  configPath: './config.json',
+  backend: 'docker',
+  docker: {
+    image: 'stdiobus/stdiobus:node20',
+    pullPolicy: 'if-missing',
+    startupTimeoutMs: 15_000,
   },
-  listenMode: 'unix',
-  unixPath: '/tmp/stdiobus.sock'
-});
-
-await bus.start();
-console.log('Listening on /tmp/stdiobus.sock');
-
-// Clients can connect with: nc -U /tmp/stdiobus.sock
-```
-
-## Configuration
-
-Configuration is passed programmatically via `configJson`:
-
-```javascript
-const { StdioBus } = require('@stdiobus/node');
-
-const bus = new StdioBus({
-  configJson: {
-    pools: [
-      {
-        id: 'mcp-worker',
-        command: 'node',
-        args: ['./worker.js'],
-        instances: 4
-      }
-    ],
-    limits: {
-      max_input_buffer: 1048576,
-      max_output_queue: 4194304,
-      max_restarts: 5,
-      restart_window_sec: 60
-    }
-  }
 });
 ```
 
-File-based config is also supported for backward compatibility:
+Set `backend: 'auto'` (default) to use native when available, Docker otherwise.
 
-```javascript
-const bus = new StdioBus({ configPath: './config.json' });
-```
+## Platform Support
 
-`configJson` and `configPath` are mutually exclusive.
+| Platform | Architecture | Native | Docker |
+|----------|-------------|--------|--------|
+| macOS | x64 | ✓ | ✓ |
+| macOS | arm64 | ✓ | ✓ |
+| Linux | x64 | ✓ | ✓ |
+| Linux | arm64 | ✓ | ✓ |
+| Windows | x64 | — | ✓ |
 
 ## API Reference
 
 ### Constructor
 
-```javascript
-new StdioBus(options)
+```typescript
+new StdioBus(options: StdioBusOptions)
 ```
 
-**Options:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `configJson` | `object` | — | Programmatic config (recommended) |
+| `configPath` | `string` | — | Path to JSON config file |
+| `backend` | `'auto' \| 'native' \| 'docker'` | `'auto'` | Backend selection |
+| `listenMode` | `'none' \| 'tcp' \| 'unix'` | `'none'` | External listener mode |
+| `tcpHost` | `string` | `'127.0.0.1'` | TCP bind address |
+| `tcpPort` | `number` | — | TCP port (required for tcp mode) |
+| `unixPath` | `string` | — | Unix socket path (required for unix mode) |
+| `logLevel` | `number` | `1` | 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR |
+| `pollIntervalMs` | `number` | `10` | Native backend poll interval |
+| `docker` | `DockerOptions` | — | Docker backend configuration |
 
-| Option | Type | Required | Default | Description |
-|--------|------|----------|---------|-------------|
-| `configJson` | object | * | - | Programmatic config (mutually exclusive with configPath) |
-| `configPath` | string | * | - | Path to JSON config file (mutually exclusive with configJson) |
-| `listenMode` | string | No | `'none'` | Transport mode: `'none'`, `'tcp'`, or `'unix'` (native only) |
-| `tcpHost` | string | No | `'127.0.0.1'` | TCP bind address (native tcp mode) |
-| `tcpPort` | number | Yes* | - | TCP port (*required for native tcp mode) |
-| `unixPath` | string | Yes* | - | Unix socket path (*required for native unix mode) |
-| `logLevel` | number | No | `1` | Log level: 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR (native only) |
+`configJson` and `configPath` are mutually exclusive. One is required.
 
-**Backend selection (`backend` option):**
-- `'auto'` (default): Uses native on macOS/Linux, docker on Windows
-- `'native'`: Force native backend (fails on Windows)
-- `'docker'`: Force Docker backend (works everywhere)
+### Lifecycle
 
-### Methods
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `start()` | `Promise<void>` | Start bus and spawn workers |
+| `stop(timeoutSec?)` | `Promise<void>` | Graceful shutdown (default: 30s) |
+| `destroy()` | `void` | Release all resources |
 
-#### `bus.getBackendType()`
+### Messaging
 
-Returns the backend being used: `'native'` or `'docker'`.
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `request(method, params?, options?)` | `Promise<T>` | Send request, await response |
+| `send(message)` | `boolean` | Send raw JSON-RPC string |
+| `onMessage(handler)` | `void` | Register message handler |
 
-#### `bus.onMessage(handler)`
+### State
 
-Register a message handler. Called for each message received from workers.
-
-```javascript
-bus.onMessage((msg) => {
-  const data = JSON.parse(msg);
-  console.log('Received:', data);
-});
-```
-
-#### `bus.start(): Promise<void>`
-
-Start the bus and spawn worker processes.
-
-#### `bus.stop(timeoutSec?: number): Promise<void>`
-
-Stop the bus gracefully. Workers receive SIGTERM and have `timeoutSec` seconds to exit (default: 30).
-
-#### `bus.send(message: string): boolean`
-
-Send a JSON-RPC message to workers. Returns true if queued successfully.
-
-#### `bus.request(method, params?, options?): Promise<any>`
-
-Send a request and wait for response with automatic correlation.
-
-```javascript
-const result = await bus.request('tools/list', {}, {
-  timeout: 30000,      // Timeout in ms (default: 30000)
-  sessionId: 'abc123'  // Optional session ID for routing
-});
-```
-
-#### `bus.getState(): number`
-
-Get current bus state:
-
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `BusState.CREATED` | 0 | Created but not started |
-| `BusState.STARTING` | 1 | Workers being spawned |
-| `BusState.RUNNING` | 2 | Running and accepting messages |
-| `BusState.STOPPING` | 3 | Graceful shutdown in progress |
-| `BusState.STOPPED` | 4 | Fully stopped |
-
-#### `bus.getStats(): object`
-
-Get statistics:
-
-```javascript
-{
-  messagesIn: 100,       // Messages sent to workers
-  messagesOut: 100,      // Messages received from workers
-  bytesIn: 10240,        // Total bytes sent
-  bytesOut: 20480,       // Total bytes received
-  workerRestarts: 0,     // Number of worker restarts
-  routingErrors: 0,      // Messages that couldn't be routed
-  clientConnects: 5,     // Client connections (TCP/Unix modes)
-  clientDisconnects: 2   // Client disconnections (TCP/Unix modes)
-}
-```
-
-#### `bus.getWorkerCount(): number`
-
-Get number of running workers.
-
-#### `bus.getClientCount(): number`
-
-Get number of connected clients (TCP/Unix modes only, returns 0 in embedded mode).
-
-#### `bus.getListenMode(): string`
-
-Get the listen mode: `'none'`, `'tcp'`, or `'unix'`.
-
-#### `bus.isRunning(): boolean`
-
-Check if bus is in RUNNING state.
-
-#### `bus.destroy(): void`
-
-Destroy the bus and release all resources.
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getState()` | `number` | Bus state (0–4) |
+| `getStats()` | `BusStats` | Runtime statistics |
+| `getWorkerCount()` | `number` | Running workers |
+| `getClientCount()` | `number` | Connected clients (TCP/Unix) |
+| `getBackendType()` | `'native' \| 'docker'` | Active backend |
+| `getListenMode()` | `string` | Listen mode |
+| `isRunning()` | `boolean` | Convenience check |
 
 ### Constants
 
-```javascript
-const { BusState, ListenMode } = require('@stdiobus/node');
+```typescript
+import { BusState, ListenMode, BackendMode } from '@stdiobus/node';
 
-// Bus states
 BusState.CREATED   // 0
 BusState.STARTING  // 1
 BusState.RUNNING   // 2
 BusState.STOPPING  // 3
 BusState.STOPPED   // 4
 
-// Listen modes
 ListenMode.NONE    // 'none'
 ListenMode.TCP     // 'tcp'
 ListenMode.UNIX    // 'unix'
+
+BackendMode.AUTO   // 'auto'
+BackendMode.NATIVE // 'native'
+BackendMode.DOCKER // 'docker'
 ```
 
-## Docker Mode (Windows & Cross-Platform)
+## Known Behavior
 
-Run stdio_bus in a Docker container. Required on Windows, optional on macOS/Linux.
+- Workers that crash beyond `max_restarts` within `restart_window_sec` are not restarted.
+- `stop()` sends SIGTERM to workers and waits up to `timeoutSec` for graceful exit.
+- `request()` correlates responses by JSON-RPC `id`. Each request gets a unique ID.
+- In embedded mode (`listenMode: 'none'`), messages flow through `send()` / `onMessage()`.
+- In TCP/Unix modes, external clients connect and send NDJSON directly.
+- `configJson` is serialized to a temp file internally, cleaned up on `destroy()`.
+- Always call `destroy()` after `stop()` to release native resources and clean up temp files.
 
-```javascript
-const { StdioBus } = require('@stdiobus/node');
+## Development
 
-const bus = new StdioBus({
-  configPath: './config.json',
-  backend: 'docker',
-  docker: {
-    image: 'stdiobus/stdiobus:node20',
-    pullPolicy: 'if-missing'
-  }
-});
-
-await bus.start();
-console.log('Backend:', bus.getBackendType()); // 'docker'
-
-// Same API as native backend
-const result = await bus.request('tools/list', {});
-await bus.stop();
+```bash
+npm install                # install dependencies
+npm run build              # esbuild (JS) + tsc (declarations)
+npm run typecheck          # type-check without emit
+npm run test:e2e           # npm pack → install → verify on macOS + Docker Linux
+npm run test:e2e:native    # macOS only
+npm run test:e2e:docker    # Docker Linux only
 ```
 
-**Docker options:**
+Build output:
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `image` | `stdiobus/stdiobus:node20` | Docker image to use |
-| `pullPolicy` | `if-missing` | `never`, `if-missing`, or `always` |
-| `enginePath` | `docker` | Path to docker CLI |
-| `startupTimeoutMs` | `15000` | Container startup timeout |
-| `containerNamePrefix` | `stdiobus` | Container name prefix |
-| `extraArgs` | `[]` | Extra `docker run` arguments |
-| `env` | `{}` | Environment variables |
-
-**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running.
-
-## Examples
-
-### Echo Server (TCP)
-
-```javascript
-const { StdioBus } = require('@stdiobus/node');
-
-const bus = new StdioBus({
-  configPath: './echo-config.json',
-  listenMode: 'tcp',
-  tcpHost: '0.0.0.0',
-  tcpPort: 9000
-});
-
-await bus.start();
-console.log('Echo server running on port 9000');
-
-process.on('SIGINT', async () => {
-  console.log('Shutting down...');
-  await bus.stop();
-  process.exit(0);
-});
+```
+out/
+  dist/index.js       # CJS bundle (esbuild, minified)
+  tsc/*.d.ts          # Type declarations (tsc)
 ```
 
-### MCP Proxy
+## Contributing
 
-```javascript
-const { StdioBus } = require('@stdiobus/node');
+1. Open an issue describing the change before submitting a PR.
+2. All PRs must include tests covering the change.
+3. Run `npm run typecheck && npm run test:e2e` before submitting.
 
-const bus = new StdioBus({
-  configPath: './mcp-config.json',
-  listenMode: 'unix',
-  unixPath: '/tmp/mcp-proxy.sock'
-});
+## Security
 
-await bus.start();
-// Workers handle MCP protocol, clients connect via Unix socket
-```
-
-## Architecture
-
-```mermaid
-sequenceDiagram
-    participant App as Node.js Application
-    participant JS as @stdiobus/node
-    participant NAPI as binding.c (N-API)
-    participant Lib as libstdio_bus.a
-    participant W as Worker Processes
-
-    App->>JS: new StdioBus(config)
-    JS->>NAPI: create(options)
-    NAPI->>Lib: stdio_bus_create()
-    
-    App->>JS: bus.start()
-    JS->>NAPI: start()
-    NAPI->>Lib: stdio_bus_start()
-    Lib->>W: fork/exec workers
-    
-    App->>JS: bus.send(message)
-    JS->>NAPI: send(msg)
-    NAPI->>Lib: stdio_bus_ingest()
-    Lib->>W: route to worker (stdin)
-    W->>Lib: response (stdout)
-    Lib->>NAPI: on_message callback
-    NAPI->>JS: poll() returns messages
-    JS->>App: onMessage(handler)
-    
-    App->>JS: bus.stop()
-    JS->>NAPI: stop()
-    NAPI->>Lib: stdio_bus_stop()
-    Lib->>W: SIGTERM
-```
-
-The C library handles:
-- **Worker process management** - Fork/exec, monitoring, restart with backoff
-- **Message routing** - Session-based routing with round-robin assignment
-- **NDJSON framing** - Line-delimited JSON-RPC messages
-- **Backpressure** - Per-connection output queues with limits
-- **TCP/Unix listeners** - Accept external client connections
+To report a security vulnerability, email [security@stdiobus.dev](mailto:security@stdiobus.dev). Do not open a public issue.
 
 ## License
 
-Apache-2.0
+[Apache-2.0](./LICENSE)
