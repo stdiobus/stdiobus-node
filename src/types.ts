@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /** Bus state constants */
 export const BusState = {
   CREATED: 0,
@@ -56,7 +59,7 @@ export interface StdioBusConfig {
 
 export interface StdioBusOptions {
   configPath?: string;
-  configJson?: StdioBusConfig;
+  config?: StdioBusConfig;
   backend?: 'auto' | 'native' | 'docker';
   pollIntervalMs?: number;
   listenMode?: 'none' | 'tcp' | 'unix';

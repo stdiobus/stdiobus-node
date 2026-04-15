@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * Conformance tests for @stdiobus/node native addon
  *

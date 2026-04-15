@@ -1,6 +1,6 @@
 {
   "name": "@stdiobus/node",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Native Node.js binding for stdio_bus — AI agent transport layer. Prebuild binaries, Docker fallback.",
   "main": "out/dist/index.js",
   "types": "out/tsc/index.d.ts",

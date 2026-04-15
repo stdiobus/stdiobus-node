@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * @stdiobus/node — Native Node.js binding for stdio_bus
  *
@@ -54,9 +57,9 @@ export class StdioBus {
     if (!options) throw new Error('options is required');
 
     const hasPath = !!options.configPath;
-    const hasJson = !!options.configJson;
-    if (hasPath && hasJson) throw new Error('configPath and configJson are mutually exclusive');
-    if (!hasPath && !hasJson) throw new Error('configPath or configJson is required');
+    const hasJson = !!options.config;
+    if (hasPath && hasJson) throw new Error('configPath and config via json are mutually exclusive');
+    if (!hasPath && !hasJson) throw new Error('configPath or config via json is required');
 
     this.backendType = resolveBackend(options.backend ?? 'auto');
     this.listenMode = options.listenMode ?? ListenMode.NONE;
@@ -65,7 +68,7 @@ export class StdioBus {
 
     if (hasJson && !hasPath) {
       const tmpFile = path.join(os.tmpdir(), `stdiobus-${process.pid}-${Date.now()}.json`);
-      fs.writeFileSync(tmpFile, JSON.stringify(options.configJson), { mode: 0o600 });
+      fs.writeFileSync(tmpFile, JSON.stringify(options.config), { mode: 0o600 });
       this.configPath = tmpFile;
       this.tempConfigPath = tmpFile;
     }

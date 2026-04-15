@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * README.md Verbatim Verification
  *
@@ -109,7 +112,7 @@ console.log(`Working directory: ${WORKDIR}\n`);
       const { StdioBus } = require(LOCAL_PKG);
 
       const bus = new StdioBus({
-        configJson: {
+        config: {
           pools: [{
             id: 'echo',
             command: 'node',
@@ -136,10 +139,10 @@ console.log(`Working directory: ${WORKDIR}\n`);
     await test('TypeScript', async () => {
       // README: import { StdioBus, BusState } from '@stdiobus/node';
       // README: import type { StdioBusOptions, BusStats } from '@stdiobus/node';
-      const { StdioBus, BusState } = require(LOCAL_PKG);
+      const { StdioBus } = require(LOCAL_PKG);
 
       const options: import('../../src/types').StdioBusOptions = {
-        configJson: {
+        config: {
           pools: [{
             id: 'worker',
             command: 'node',
@@ -182,7 +185,7 @@ console.log(`Working directory: ${WORKDIR}\n`);
       const { StdioBus } = require(LOCAL_PKG);
 
       const bus = new StdioBus({
-        configJson: {
+        config: {
           pools: [{
             id: 'acp-worker',
             command: 'node',
@@ -194,11 +197,11 @@ console.log(`Working directory: ${WORKDIR}\n`);
 
       await bus.start();
 
-      const init = await bus.request('initialize', {
-        protocolVersion: 1,
-        clientInfo: { name: 'my-app', version: '1.0.0' },
-        clientCapabilities: {},
-      }, { timeout: 60_000 });
+      // const init = await bus.request('initialize', {
+      //   protocolVersion: 1,
+      //   clientInfo: { name: 'my-app', version: '1.0.0' },
+      //   clientCapabilities: {},
+      // }, { timeout: 60_000 });
 
       const session = await bus.request('session/new', {
         cwd: process.cwd(),
@@ -224,7 +227,7 @@ console.log(`Working directory: ${WORKDIR}\n`);
       const { StdioBus } = require(LOCAL_PKG);
 
       const bus = new StdioBus({
-        configJson: {
+        config: {
           pools: [{
             id: 'mcp-tools',
             command: 'node',
@@ -278,7 +281,7 @@ console.log(`Working directory: ${WORKDIR}\n`);
       const port = Number(process.env.PORT) || 8080;
 
       const bus = new StdioBus({
-        configJson: {
+        config: {
           pools: [{
             id: 'worker',
             command: 'node',

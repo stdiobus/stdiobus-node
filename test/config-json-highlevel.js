@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * Test: StdioBus class with configJson — full E2E roundtrip.
  * Every test sends a request through the bus and verifies the response.
@@ -20,13 +23,13 @@ function assert(condition, msg) {
 }
 
 async function main() {
-  console.log('Testing StdioBus with configJson — E2E roundtrip...\n');
+  console.log('Testing StdioBus with json config — E2E roundtrip...\n');
 
-  // Test 1: configJson — full roundtrip
-  console.log('Test 1: configJson echo roundtrip');
+  // Test 1: json config — full roundtrip
+  console.log('Test 1: json config echo roundtrip');
   {
     const bus = new StdioBus({
-      configJson: {
+      config: {
         pools: [{ id: 'echo', command: 'node', args: [ECHO_WORKER], instances: 1 }],
       },
     });
@@ -42,11 +45,11 @@ async function main() {
     bus.destroy();
   }
 
-  // Test 2: configJson with limits — full roundtrip
-  console.log('\nTest 2: configJson with limits echo roundtrip');
+  // Test 2: json config with limits — full roundtrip
+  console.log('\nTest 2: json config with limits echo roundtrip');
   {
     const bus = new StdioBus({
-      configJson: {
+      config: {
         pools: [{ id: 'echo', command: 'node', args: [ECHO_WORKER], instances: 1 }],
         limits: { max_restarts: 5, drain_timeout_sec: 10 },
       },
@@ -66,7 +69,7 @@ async function main() {
   console.log('\nTest 3: multiple sequential requests');
   {
     const bus = new StdioBus({
-      configJson: {
+      config: {
         pools: [{ id: 'echo', command: 'node', args: [ECHO_WORKER], instances: 1 }],
       },
     });
@@ -83,9 +86,9 @@ async function main() {
   }
 
   // Test 4: mutual exclusivity
-  console.log('\nTest 4: configPath + configJson throws');
+  console.log('\nTest 4: configPath + json config throws');
   try {
-    new StdioBus({ configPath: '/tmp/fake.json', configJson: { pools: [] } });
+    new StdioBus({ configPath: '/tmp/fake.json', config: { pools: [] } });
     assert(false, 'Should have thrown');
   } catch (err) {
     assert(err.message.includes('mutually exclusive'), `Correct error: ${err.message}`);

@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026-present Raman Marozau <raman@worktif.com>, stdiobus contributors
+
 /**
  * E2E test: verify @stdiobus/node works when installed from npm pack tarball.
  *
@@ -80,7 +84,7 @@ const echoWorker = path.join(__dirname, 'echo-worker.js');
 async function main() {
   console.log('[test] Creating StdioBus with configJson...');
   const bus = new StdioBus({
-    configJson: {
+    config: {
       pools: [
         { id: 'echo', command: 'node', args: [echoWorker], instances: 1 }
       ],
