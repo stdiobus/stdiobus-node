@@ -1,6 +1,7 @@
 # @stdiobus/node
 
 [![npm](https://img.shields.io/npm/v/@stdiobus/node?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/@stdiobus/node)
+[![stdioBus](https://img.shields.io/badge/ecosystem-stdio%20Bus-ff4500?style=for-the-badge)](https://github.com/stdiobus)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
 [![Native](https://img.shields.io/badge/native-macOS%20%7C%20Linux-lightgrey?style=for-the-badge&logo=linux)](https://github.com/stdiobus/stdiobus)
 [![Docker](https://img.shields.io/badge/docker-Windows%20fallback-blue?style=for-the-badge&logo=docker)](https://hub.docker.com/r/stdiobus/stdiobus)
