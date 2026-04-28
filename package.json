@@ -71,6 +71,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
+    "@stdiobus/mcp-agentic": "^1.0.4",
     "@types/node": "^20.19.39",
     "esbuild": "^0.25.0",
     "tsx": "^4.21.0",

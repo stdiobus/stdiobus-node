@@ -4,4 +4,5 @@ out/
 .DS_Store
 sandbox
 .vscode
+.kiro
 .idea
