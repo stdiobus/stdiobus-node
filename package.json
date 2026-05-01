@@ -71,9 +71,10 @@
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
-    "@stdiobus/mcp-agentic": "^1.0.4",
+    "@stdiobus/mcp-agentic": "1.1.2",
     "@types/node": "^20.19.39",
     "esbuild": "^0.25.0",
+    "openai": "^6.35.0",
     "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   }

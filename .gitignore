@@ -3,6 +3,7 @@ out/
 *.tgz
 .DS_Store
 sandbox
+_collegues/
 .vscode
 .kiro
 .idea
