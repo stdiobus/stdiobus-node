@@ -7,3 +7,5 @@ _collegues/
 .vscode
 .kiro
 .idea
+package-lock.json
+yarn.lock
