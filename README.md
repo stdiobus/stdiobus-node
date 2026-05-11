@@ -1,16 +1,24 @@
-# @stdiobus/node
+<h1 align="center" style="font-weight:500">
+  <strong>stdio Bus Node.js SDK for AI Agent Transport</strong>
+</h1>
 
-[![npm](https://img.shields.io/npm/v/@stdiobus/node?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/@stdiobus/node)
-[![stdioBus](https://img.shields.io/badge/ecosystem-stdio%20Bus-ff4500?style=for-the-badge)](https://github.com/stdiobus)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
-[![Native](https://img.shields.io/badge/native-macOS%20%7C%20Linux-lightgrey?style=for-the-badge&logo=linux)](https://github.com/stdiobus/stdiobus)
-[![Docker](https://img.shields.io/badge/docker-Windows%20fallback-blue?style=for-the-badge&logo=docker)](https://hub.docker.com/r/stdiobus/stdiobus)
-[![Build](https://img.shields.io/badge/build-esbuild-yellow?style=for-the-badge&logo=esbuild)](https://esbuild.github.io)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=opensourceinitiative)](https://github.com/stdiobus/stdiobus/blob/main/sdk/node-native/LICENSE)
-[![TypeScript](https://img.shields.io/badge/typescript-strict-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
-[![Stable](https://img.shields.io/badge/status-stable-brightgreen?style=for-the-badge)](https://github.com/stdiobus/stdiobus)
+<p align="center">
+  Native Node.js SDK for the [stdio Bus kernel](https://github.com/stdiobus/stdiobus) — a deterministic C runtime that routes NDJSON-framed JSON-RPC messages between your application and worker processes. Session-aware routing, automatic worker lifecycle management, and prebuilt native binaries for macOS and Linux. Docker fallback for Windows and unsupported platforms.
+</p>
 
-Native Node.js SDK for the [stdio Bus kernel](https://github.com/stdiobus/stdiobus) — a deterministic C runtime that routes NDJSON-framed JSON-RPC messages between your application and worker processes. Session-aware routing, automatic worker lifecycle management, and prebuilt native binaries for macOS and Linux. Docker fallback for Windows and unsupported platforms.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@stdiobus/node"><img src="https://img.shields.io/npm/v/@stdiobus/node?style=for-the-badge&logo=npm" alt="npm" /></a>
+  <a href="https://github.com/stdiobus"><img src="https://img.shields.io/badge/ecosystem-stdio%20Bus-ff4500?style=for-the-badge" alt="stdioBus" /></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/protocol-MCP-purple?style=for-the-badge&logo=jsonwebtokens" alt="MCP"></a>
+  <a href="https://agentclientprotocol.com"><img src="https://img.shields.io/badge/protocol-ACP-purple?style=for-the-badge&logo=jsonwebtokens" alt="ACP"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=for-the-badge&logo=nodedotjs" alt="Node" /></a>
+  <a href="https://github.com/stdiobus/stdiobus-cpp"><img src="https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-blue?style=for-the-badge" alt="Architecture"></a>
+  <a href="https://hub.docker.com/r/stdiobus/stdiobus"><img src="https://img.shields.io/badge/docker-Windows%20fallback-blue?style=for-the-badge&logo=docker" alt="Docker" /></a>
+  <a href="https://esbuild.github.io"><img src="https://img.shields.io/badge/build-esbuild-yellow?style=for-the-badge&logo=esbuild" alt="Build" /></a>
+  <a href="https://github.com/stdiobus/stdiobus/blob/main/sdk/node-native/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=for-the-badge&logo=opensourceinitiative" alt="License" /></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-strict-blue?style=for-the-badge&logo=typescript" alt="TypeScript" /></a>
+  <a href="https://github.com/stdiobus/stdiobus"><img src="https://img.shields.io/badge/status-stable-brightgreen?style=for-the-badge" alt="Stable" /></a>
+</p>
 
 ## Installation
 
