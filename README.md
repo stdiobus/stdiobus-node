@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  Native Node.js SDK for the [stdio Bus kernel](https://github.com/stdiobus/stdiobus) — a deterministic C runtime that routes NDJSON-framed JSON-RPC messages between your application and worker processes. Session-aware routing, automatic worker lifecycle management, and prebuilt native binaries for macOS and Linux. Docker fallback for Windows and unsupported platforms.
+  Native Node.js SDK for the <a href="https://github.com/stdiobus/stdiobus" target="_blank">stdio Bus kernel</a> — a deterministic C runtime that routes NDJSON-framed JSON-RPC messages between your application and worker processes. Session-aware routing, automatic worker lifecycle management, and prebuilt native binaries for macOS and Linux. Docker fallback for Windows and unsupported platforms.
 </p>
 
 <p align="center">
